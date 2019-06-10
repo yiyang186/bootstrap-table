@@ -653,8 +653,8 @@ class BootstrapTable {
     }
   }
 
-  onSearch ({currentTarget, firedByInitSearchText} = {}) {
-    if (currentTarget !== undefined) {
+  onSearch ({currentTarget, firedByInitSearchText} = {}, overwriteSearchText = true) {
+    if (currentTarget !== undefined && overwriteSearchText) {
       const text = $(currentTarget).val().trim()
 
       if (this.options.trimOnSearch && $(currentTarget).val() !== text) {
@@ -729,9 +729,10 @@ class BootstrapTable {
         }) : this.options.data
       }
 
+      const visibleFields = this.getVisibleFields()
       this.data = s ? this.data.filter((item, i) => {
         for (let j = 0; j < this.header.fields.length; j++) {
-          if (!this.header.searchables[j]) {
+          if (!this.header.searchables[j] || (this.options.visibleSearch && visibleFields.indexOf(this.header.fields[j]) === -1)) {
             continue
           }
 
@@ -2232,7 +2233,7 @@ class BootstrapTable {
   }
 
   _toggleColumn (index, checked, needUpdate) {
-    if (index === -1) {
+    if (index === -1 || this.columns[index].visible === checked) {
       return
     }
     this.columns[index].visible = checked
