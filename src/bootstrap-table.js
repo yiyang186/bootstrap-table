@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.14.2
+ * version: 1.15.0
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -625,21 +625,28 @@ class BootstrapTable {
       const showSearchButton = Utils.sprintf(this.constants.html.searchButton, o.formatSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.search) : '', o.showButtonText ? o.formatSearch() : '')
       const showSearchClearButton = Utils.sprintf(this.constants.html.searchClearButton, o.formatClearSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.clearSearch) : '', o.showButtonText ? o.formatClearSearch() : '')
 
+      const searchInputHtml = `<input class="${this.constants.classes.input}${Utils.sprintf(' input-%s', o.iconSize)} search-input" type="text" placeholder="${o.formatSearch()}">`
+      let searchInputFinalHtml = searchInputHtml
+      if (o.showSearchButton || o.showSearchClearButton) {
+        searchInputFinalHtml = Utils.sprintf(this.constants.html.inputGroup,
+          searchInputHtml,
+          (o.showSearchButton ? showSearchButton : '') +
+            (o.showSearchClearButton ? showSearchClearButton : ''))
+      }
+
       html.push(Utils.sprintf(`
         <div class="${this.constants.classes.pull}-${o.searchAlign} search ${this.constants.classes.inputGroup}">
-            %s
+          %s
         </div>
-      `,
-      Utils.sprintf(this.constants.html.inputGroup,
-        `<input class="${this.constants.classes.input}${Utils.sprintf(' input-%s', o.iconSize)}" type="text" placeholder="${o.formatSearch()}">`,
-        (o.showSearchButton ? showSearchButton : '') +
-        (o.showSearchClearButton ? showSearchClearButton : ''))
-      ))
+      `, searchInputFinalHtml))
 
       this.$toolbar.append(html.join(''))
       const $searchInput = this.$toolbar.find('.search input')
       $search = o.showSearchButton ? this.$toolbar.find('.search button[name=search]') : $searchInput
-      const eventTriggers = o.showSearchButton ? 'click' : 'keyup drop blur'
+
+      const eventTriggers = o.showSearchButton ? 'click' :
+        (Utils.isIEBrowser() ? 'mouseup' : 'keyup drop blur')
+
       $search.off(eventTriggers).on(eventTriggers, event => {
         if (o.searchOnEnterKey && event.keyCode !== 13) {
           return
@@ -661,15 +668,6 @@ class BootstrapTable {
           this.onSearch({currentTarget: this.$toolbar.find('.search input')})
         })
       }
-
-      if (Utils.isIEBrowser()) {
-        $search.off('mouseup').on('mouseup', event => {
-          clearTimeout(timeoutId) // doesn't matter if it's 0
-          timeoutId = setTimeout(() => {
-            this.onSearch(event)
-          }, o.searchTimeOut)
-        })
-      }
     }
   }
 
@@ -685,8 +683,10 @@ class BootstrapTable {
         return
       }
 
-      this.searchText = text
-      this.options.searchText = text
+      if ($(currentTarget).hasClass('search-input')) {
+        this.searchText = text
+        this.options.searchText = text
+      }
     }
 
     if (!firedByInitSearchText) {
@@ -1025,7 +1025,7 @@ class BootstrapTable {
               html.push(pageItem(i, ' page-intermediate'))
             } else {
               html.push(Utils.sprintf(this.constants.html.paginationItem,
-                ' page-last-separator disabled', '...'))
+                ' page-last-separator disabled', '', '...'))
             }
           }
         }
@@ -1376,7 +1376,7 @@ class BootstrapTable {
       const tr = this.initRow(item, i, data, trFragments)
       hasTr = hasTr || !!tr
       if (tr && typeof tr === 'string') {
-        if (this.virtualScrollDisabled) {
+        if (!this.options.virtualScroll) {
           trFragments.append(tr)
         } else {
           rows.push(tr)
@@ -1390,7 +1390,7 @@ class BootstrapTable {
         this.$header.find('th').length,
         this.options.formatNoMatches())}</tr>`)
     } else {
-      if (this.virtualScrollDisabled) {
+      if (!this.options.virtualScroll) {
         this.$body.html(trFragments)
       } else {
         if (this.virtualScroll) {
@@ -1400,6 +1400,7 @@ class BootstrapTable {
           rows,
           scrollEl: this.$tableBody[0],
           contentEl: this.$body[0],
+          itemHeight: this.options.virtualScrollItemHeight,
           callback: () => {
             this.fitHeader()
           }
@@ -2061,7 +2062,13 @@ class BootstrapTable {
       if (!params.hasOwnProperty('index') || !params.hasOwnProperty('row')) {
         continue
       }
+
       $.extend(this.options.data[params.index], params.row)
+      if (params.hasOwnProperty('replace') && params.replace) {
+        this.options.data[params.index] = params.row
+      } else {
+        $.extend(this.options.data[params.index], params.row)
+      }
     }
 
     this.initSearch()
@@ -2118,11 +2125,15 @@ class BootstrapTable {
       }
 
       const rowId = this.options.data.indexOf(this.getRowByUniqueId(params.id))
-
       if (rowId === -1) {
         continue
       }
-      $.extend(this.options.data[rowId], params.row)
+
+      if (params.hasOwnProperty('replace') && params.replace) {
+        this.options.data[rowId] = params.row
+      } else {
+        $.extend(this.options.data[rowId], params.row)
+      }
     }
 
     this.initSearch()

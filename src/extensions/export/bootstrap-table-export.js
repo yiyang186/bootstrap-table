@@ -35,6 +35,10 @@ $.extend($.fn.bootstrapTable.defaults, {
   exportFooter: false
 })
 
+$.extend($.fn.bootstrapTable.columnDefaults, {
+  forceExport: false
+})
+
 $.extend($.fn.bootstrapTable.defaults.icons, {
   export: {
     bootstrap3: 'glyphicon-export icon-share',
@@ -80,7 +84,7 @@ $.BootstrapTable = class extends $.BootstrapTable {
       return
     }
 
-    let $menu = $(this.constants.html.pageDropdown.join(''))
+    let $menu = $(this.constants.html.toolbarDropdown.join(''))
 
     this.$export = $(`
       <div class="export ${this.constants.classes.buttonsDropdown}">
@@ -89,8 +93,8 @@ $.BootstrapTable = class extends $.BootstrapTable {
       data-toggle="dropdown"
       type="button"
       title="${o.formatExport()}">
-      ${ o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.export) : ''}
-      ${ o.showButtonText ? o.formatExport() : ''}
+      ${o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.export) : ''}
+      ${o.showButtonText ? o.formatExport() : ''}
       ${this.constants.html.dropdownCaret}
       </button>
       </div>
@@ -183,6 +187,17 @@ $.BootstrapTable = class extends $.BootstrapTable {
         })
       }
 
+      const hiddenColumns = this.getHiddenColumns()
+      hiddenColumns.forEach((row) => {
+        if (row.forceExport) {
+          this.showColumn(row.field)
+        }
+      })
+
+      if (typeof o.exportOptions.fileName === 'function') {
+        options.fileName = o.exportOptions.fileName()
+      }
+
       this.$el.tableExport($.extend({
         onAfterSaveToFile: () => {
           if (o.exportFooter) {
@@ -196,6 +211,12 @@ $.BootstrapTable = class extends $.BootstrapTable {
             this.toggleView()
           }
 
+          hiddenColumns.forEach((row) => {
+            if (row.forceExport) {
+              this.hideColumn(row.field)
+            }
+          })
+
           if (callback) callback()
         }
       }, o.exportOptions, options))
@@ -204,13 +225,15 @@ $.BootstrapTable = class extends $.BootstrapTable {
     if (o.exportDataType === 'all' && o.pagination) {
       const eventName = o.sidePagination === 'server'
         ? 'post-body.bs.table' : 'page-change.bs.table'
+      const virtualScroll = this.options.virtualScroll
+
       this.$el.one(eventName, () => {
         doExport(() => {
-          this.virtualScrollDisabled = false
+          this.options.virtualScroll = virtualScroll
           this.togglePagination()
         })
       })
-      this.virtualScrollDisabled = true
+      this.options.virtualScroll = false
       this.togglePagination()
       this.trigger('export-saved', this.getData())
     } else if (o.exportDataType === 'selected') {
