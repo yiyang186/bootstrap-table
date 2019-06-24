@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.15.0
+ * version: 1.15.2
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -1490,7 +1490,11 @@ class BootstrapTable {
         fieldIndex += 1
       }
 
-      for (const [key, event] of Object.entries(events)) {
+      for (const key in events) {
+        if (!events.hasOwnProperty(key)) {
+          continue
+        }
+        const event = events[key]
         this.$body.find('>tr:not(.no-records-found)').each((i, tr) => {
           const $tr = $(tr)
           const $td = $tr.find(this.options.cardView ? '.card-view' : 'td').eq(fieldIndex)
