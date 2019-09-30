@@ -1,6 +1,33 @@
 ChangeLog
 ---------
 
+### 1.15.4
+
+- **New:** Added `query` to `queryParams` option.
+- **New:** Added `filter` parameter of `customSearch` option.
+- **Update:** Fixed search bug in hidden columns.
+- **Update:** Fixed table zoom width calculating bug.
+- **Update:** Fixed events of column formatted by nested table.
+- **Update:** Fixed checkbox style display bug.
+- **Update:** Fixed stack overflow error of `checkBy` method.
+- **Update:** Fixed `showSearchButton` and `showSearchClearButton` style bug.
+- **Update:** Fixed filter-control select `null` value handle error.
+- **Update:** Fixed `showSearchClearButton` bug in filter-control extension.
+- **Update:** Fixed `print` button appears twice bug.
+
+### 1.15.3
+
+- **New:** Added nl-BE, fr-CH and fr-LU locale.
+- **Update:** Updated nl-NL, pt-BR, fr-BE, fr-FR, nl-BE and nl-NL locale.
+- **Update:** Fixed treegrid duplicate rows bug.
+- **Update:** Fixed `updateCellByUniqueId` method bug on a filtered table.
+- **Update:** Fixed colspan group header display bug.
+- **Update:** Fixed table footer display bug in some case.
+- **Update:** Fixed `getOptions` bug.
+- **Update:** Fixed `detailView` bug when hiding columns.
+- **Update:** Fixed IE minify bug.
+- **Update:** Fixed full screen scrolling bug.
+
 ### 1.15.2
 
 #### Core

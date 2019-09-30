@@ -143,6 +143,10 @@
 
       .bs-checkbox {
         text-align: center;
+
+        label {
+          margin-bottom: 0;
+        }
       }
 
       input[type="radio"],
@@ -332,6 +336,8 @@
     z-index: 1050;
     width: 100% !important;
     background: #fff;
+    height: calc(100vh);
+    overflow-y: scroll;
   }
 }
 

@@ -119,6 +119,9 @@
 .bootstrap-table .fixed-table-container .table .bs-checkbox {
   text-align: center;
 }
+.bootstrap-table .fixed-table-container .table .bs-checkbox label {
+  margin-bottom: 0;
+}
 .bootstrap-table .fixed-table-container .table input[type=radio],
 .bootstrap-table .fixed-table-container .table input[type=checkbox] {
   margin: 0 auto !important;
@@ -259,6 +262,8 @@
   z-index: 1050;
   width: 100% !important;
   background: #fff;
+  height: calc(100vh);
+  overflow-y: scroll;
 }
 
 /* calculate scrollbar width */
