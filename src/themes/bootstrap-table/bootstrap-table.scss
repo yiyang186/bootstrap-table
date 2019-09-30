@@ -7,11 +7,15 @@
 @import './font.css';
 
 .bootstrap-table {
-  input {
+  input, select {
     border-radius: 4px;
     background-color: #fff;
     border: 1px solid #ccc;
     padding: 6px 12px;
+  }
+
+  select {
+    height: 31px;
   }
 
   .btn {
@@ -33,6 +37,15 @@
     border-top: 4px solid;
     border-right: 4px solid transparent;
     border-left: 4px solid transparent;
+  }
+
+  .filter-control {
+    display: flex;
+  }
+
+  .detail-icon {
+    text-decoration: none;
+    color: $btn-active-background;
   }
 
   .btn-group {
@@ -87,7 +100,8 @@
       color: $color;
       text-decoration: none;
       display: block;
-      padding: 4px;
+      font-size: 11pt;
+      padding: 4px 15px;
     }
   }
 

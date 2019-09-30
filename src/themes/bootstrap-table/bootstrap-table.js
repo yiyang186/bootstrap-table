@@ -8,15 +8,16 @@ $.fn.bootstrapTable.theme = 'bootstrap-table'
 $.extend($.fn.bootstrapTable.defaults, {
   iconsPrefix: 'icon',
   icons: {
-    paginationSwitchDown: 'grid_on',
-    paginationSwitchUp: 'grid_off',
+    paginationSwitchDown: 'icon-arrow-up-circle',
+    paginationSwitchUp: 'icon-arrow-down-circle',
     refresh: 'icon-refresh-cw',
     toggleOff: 'icon-toggle-right',
     toggleOn: 'icon-toggle-right',
     columns: 'icon-list',
-    detailOpen: 'add',
-    detailClose: 'remove',
+    detailOpen: 'icon-plus',
+    detailClose: 'icon-minus',
     fullscreen: 'icon-maximize',
+    search: 'icon-search',
     clearSearch: 'icon-trash-2'
   }
 })
@@ -50,11 +51,12 @@ $.BootstrapTable = class extends $.BootstrapTable {
   _initDropdown () {
     const $dropdownToggles = $('.dropdown-toggle')
     $dropdownToggles.off('click').on('click', (e) => {
-      let $target = $(e.target)
+      let $target = $(e.currentTarget)
       if ($target.parents('.dropdown-toggle').length > 0) {
         $target = $target.parents('.dropdown-toggle')
       }
 
+      $dropdownToggles.next('.dropdown-menu').removeClass('open')
       $target.next('.dropdown-menu').toggleClass('open')
     })
 
