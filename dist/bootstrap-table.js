@@ -1699,26 +1699,6 @@
 	  redefine(global_1, NUMBER, NumberWrapper);
 	}
 
-	var trim$1 = stringTrim.trim;
-
-
-	var nativeParseFloat = global_1.parseFloat;
-	var FORCED$2 = 1 / nativeParseFloat(whitespaces + '-0') !== -Infinity;
-
-	// `parseFloat` method
-	// https://tc39.github.io/ecma262/#sec-parsefloat-string
-	var _parseFloat = FORCED$2 ? function parseFloat(string) {
-	  var trimmedString = trim$1(String(string));
-	  var result = nativeParseFloat(trimmedString);
-	  return result === 0 && trimmedString.charAt(0) == '-' ? -0 : result;
-	} : nativeParseFloat;
-
-	// `Number.parseFloat` method
-	// https://tc39.github.io/ecma262/#sec-number.parseFloat
-	_export({ target: 'Number', stat: true, forced: Number.parseFloat != _parseFloat }, {
-	  parseFloat: _parseFloat
-	});
-
 	var nativeAssign = Object.assign;
 
 	// `Object.assign` method
@@ -1839,6 +1819,20 @@
 	if (objectToString !== ObjectPrototype$2.toString) {
 	  redefine(ObjectPrototype$2, 'toString', objectToString, { unsafe: true });
 	}
+
+	var trim$1 = stringTrim.trim;
+
+
+	var nativeParseFloat = global_1.parseFloat;
+	var FORCED$2 = 1 / nativeParseFloat(whitespaces + '-0') !== -Infinity;
+
+	// `parseFloat` method
+	// https://tc39.github.io/ecma262/#sec-parsefloat-string
+	var _parseFloat = FORCED$2 ? function parseFloat(string) {
+	  var trimmedString = trim$1(String(string));
+	  var result = nativeParseFloat(trimmedString);
+	  return result === 0 && trimmedString.charAt(0) == '-' ? -0 : result;
+	} : nativeParseFloat;
 
 	// `parseFloat` method
 	// https://tc39.github.io/ecma262/#sec-parsefloat-string
@@ -2640,7 +2634,7 @@
 	  throw new TypeError("Invalid attempt to destructure non-iterable instance");
 	}
 
-	var VERSION = '1.15.2';
+	var VERSION = '1.15.4';
 	var bootstrapVersion = 4;
 
 	try {
@@ -2695,8 +2689,8 @@
 	      icon: '<i class="%s %s"></i>',
 	      inputGroup: '<div class="input-group">%s<span class="input-group-btn">%s</span></div>',
 	      searchInput: '<input class="%s%s" type="text" placeholder="%s">',
-	      searchButton: '<button class="btn btn-default" type="button" name="search" title="%s">%s %s</button>',
-	      searchClearButton: '<button class="btn btn-default" type="button" name="clearSearch" title="%s">%s %s</button>'
+	      searchButton: '<button class="%s" type="button" name="search" title="%s">%s %s</button>',
+	      searchClearButton: '<button class="%s" type="button" name="clearSearch" title="%s">%s %s</button>'
 	    }
 	  },
 	  4: {
@@ -2740,8 +2734,8 @@
 	      icon: '<i class="%s %s"></i>',
 	      inputGroup: '<div class="input-group">%s<div class="input-group-append">%s</div></div>',
 	      searchInput: '<input class="%s%s" type="text" placeholder="%s">',
-	      searchButton: '<button class="btn btn-secondary" type="button" name="search" title="%s">%s %s</button>',
-	      searchClearButton: '<button class="btn btn-secondary" type="button" name="clearSearch" title="%s">%s %s</button>'
+	      searchButton: '<button class="%s" type="button" name="search" title="%s">%s %s</button>',
+	      searchClearButton: '<button class="%s" type="button" name="clearSearch" title="%s">%s %s</button>'
 	    }
 	  }
 	}[bootstrapVersion];
@@ -3114,6 +3108,53 @@
 	  }
 	};
 
+	// `FlattenIntoArray` abstract operation
+	// https://tc39.github.io/proposal-flatMap/#sec-FlattenIntoArray
+	var flattenIntoArray = function (target, original, source, sourceLen, start, depth, mapper, thisArg) {
+	  var targetIndex = start;
+	  var sourceIndex = 0;
+	  var mapFn = mapper ? bindContext(mapper, thisArg, 3) : false;
+	  var element;
+
+	  while (sourceIndex < sourceLen) {
+	    if (sourceIndex in source) {
+	      element = mapFn ? mapFn(source[sourceIndex], sourceIndex, original) : source[sourceIndex];
+
+	      if (depth > 0 && isArray(element)) {
+	        targetIndex = flattenIntoArray(target, original, element, toLength(element.length), targetIndex, depth - 1) - 1;
+	      } else {
+	        if (targetIndex >= 0x1FFFFFFFFFFFFF) throw TypeError('Exceed the acceptable array length');
+	        target[targetIndex] = element;
+	      }
+
+	      targetIndex++;
+	    }
+	    sourceIndex++;
+	  }
+	  return targetIndex;
+	};
+
+	var flattenIntoArray_1 = flattenIntoArray;
+
+	// `Array.prototype.flat` method
+	// https://github.com/tc39/proposal-flatMap
+	_export({ target: 'Array', proto: true }, {
+	  flat: function flat(/* depthArg = 1 */) {
+	    var depthArg = arguments.length ? arguments[0] : undefined;
+	    var O = toObject(this);
+	    var sourceLen = toLength(O.length);
+	    var A = arraySpeciesCreate(O, 0);
+	    A.length = flattenIntoArray_1(A, O, O, sourceLen, 0, depthArg === undefined ? 1 : toInteger(depthArg));
+	    return A;
+	  }
+	});
+
+	// this method was added to unscopables after implementation
+	// in popular engines, so it's moved to a separate module
+
+
+	addToUnscopables('flat');
+
 	var FAILS_ON_PRIMITIVES = fails(function () { objectKeys(1); });
 
 	// `Object.keys` method
@@ -3232,12 +3273,16 @@
 
 	          var index = flag[_i].indexOf(false);
 
+	          r.colspanIndex = index;
+
 	          if (colspan === 1) {
 	            r.fieldIndex = index; // when field is undefined, use index instead
 
 	            if (typeof r.field === 'undefined') {
 	              r.field = index;
 	            }
+	          } else {
+	            r.colspanGroup = r.colspan;
 	          }
 
 	          for (var k = 0; k < rowspan; k++) {
@@ -3260,6 +3305,74 @@
 	          if (_didIteratorError3) {
 	            throw _iteratorError3;
 	          }
+	        }
+	      }
+	    }
+	  },
+	  updateFieldGroup: function updateFieldGroup(columns) {
+	    var allColumns = columns.flat();
+	    var _iteratorNormalCompletion4 = true;
+	    var _didIteratorError4 = false;
+	    var _iteratorError4 = undefined;
+
+	    try {
+	      for (var _iterator4 = columns[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	        var c = _step4.value;
+	        var _iteratorNormalCompletion5 = true;
+	        var _didIteratorError5 = false;
+	        var _iteratorError5 = undefined;
+
+	        try {
+	          for (var _iterator5 = c[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	            var r = _step5.value;
+
+	            if (r.colspanGroup > 1) {
+	              var colspan = 0;
+
+	              var _loop = function _loop(i) {
+	                var column = allColumns.find(function (col) {
+	                  return col.fieldIndex === i;
+	                });
+
+	                if (column.visible) {
+	                  colspan++;
+	                }
+	              };
+
+	              for (var i = r.colspanIndex; i < r.colspanIndex + r.colspanGroup; i++) {
+	                _loop(i);
+	              }
+
+	              r.colspan = colspan;
+	              r.visible = colspan > 0;
+	            }
+	          }
+	        } catch (err) {
+	          _didIteratorError5 = true;
+	          _iteratorError5 = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
+	              _iterator5.return();
+	            }
+	          } finally {
+	            if (_didIteratorError5) {
+	              throw _iteratorError5;
+	            }
+	          }
+	        }
+	      }
+	    } catch (err) {
+	      _didIteratorError4 = true;
+	      _iteratorError4 = err;
+	    } finally {
+	      try {
+	        if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
+	          _iterator4.return();
+	        }
+	      } finally {
+	        if (_didIteratorError4) {
+	          throw _iteratorError4;
 	        }
 	      }
 	    }
@@ -3293,26 +3406,26 @@
 
 	      if (names.length > 1) {
 	        func = window;
-	        var _iteratorNormalCompletion4 = true;
-	        var _didIteratorError4 = false;
-	        var _iteratorError4 = undefined;
+	        var _iteratorNormalCompletion6 = true;
+	        var _didIteratorError6 = false;
+	        var _iteratorError6 = undefined;
 
 	        try {
-	          for (var _iterator4 = names[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	            var f = _step4.value;
+	          for (var _iterator6 = names[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+	            var f = _step6.value;
 	            func = func[f];
 	          }
 	        } catch (err) {
-	          _didIteratorError4 = true;
-	          _iteratorError4 = err;
+	          _didIteratorError6 = true;
+	          _iteratorError6 = err;
 	        } finally {
 	          try {
-	            if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
-	              _iterator4.return();
+	            if (!_iteratorNormalCompletion6 && _iterator6.return != null) {
+	              _iterator6.return();
 	            }
 	          } finally {
-	            if (_didIteratorError4) {
-	              throw _iteratorError4;
+	            if (_didIteratorError6) {
+	              throw _iteratorError6;
 	            }
 	          }
 	        }
@@ -3384,26 +3497,26 @@
 	    }
 
 	    var props = field.split('.');
-	    var _iteratorNormalCompletion5 = true;
-	    var _didIteratorError5 = false;
-	    var _iteratorError5 = undefined;
+	    var _iteratorNormalCompletion7 = true;
+	    var _didIteratorError7 = false;
+	    var _iteratorError7 = undefined;
 
 	    try {
-	      for (var _iterator5 = props[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	        var p = _step5.value;
+	      for (var _iterator7 = props[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+	        var p = _step7.value;
 	        value = value && value[p];
 	      }
 	    } catch (err) {
-	      _didIteratorError5 = true;
-	      _iteratorError5 = err;
+	      _didIteratorError7 = true;
+	      _iteratorError7 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
-	          _iterator5.return();
+	        if (!_iteratorNormalCompletion7 && _iterator7.return != null) {
+	          _iterator7.return();
 	        }
 	      } finally {
-	        if (_didIteratorError5) {
-	          throw _iteratorError5;
+	        if (_didIteratorError7) {
+	          throw _iteratorError7;
 	        }
 	      }
 	    }
@@ -3414,29 +3527,29 @@
 	    return navigator.userAgent.includes('MSIE ') || /Trident.*rv:11\./.test(navigator.userAgent);
 	  },
 	  findIndex: function findIndex(items, item) {
-	    var _iteratorNormalCompletion6 = true;
-	    var _didIteratorError6 = false;
-	    var _iteratorError6 = undefined;
+	    var _iteratorNormalCompletion8 = true;
+	    var _didIteratorError8 = false;
+	    var _iteratorError8 = undefined;
 
 	    try {
-	      for (var _iterator6 = items[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	        var it = _step6.value;
+	      for (var _iterator8 = items[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+	        var it = _step8.value;
 
 	        if (JSON.stringify(it) === JSON.stringify(item)) {
 	          return items.indexOf(it);
 	        }
 	      }
 	    } catch (err) {
-	      _didIteratorError6 = true;
-	      _iteratorError6 = err;
+	      _didIteratorError8 = true;
+	      _iteratorError8 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion6 && _iterator6.return != null) {
-	          _iterator6.return();
+	        if (!_iteratorNormalCompletion8 && _iterator8.return != null) {
+	          _iterator8.return();
 	        }
 	      } finally {
-	        if (_didIteratorError6) {
-	          throw _iteratorError6;
+	        if (_didIteratorError8) {
+	          throw _iteratorError8;
 	        }
 	      }
 	    }
@@ -3782,6 +3895,11 @@
 	        }
 
 	        this.$tableFooter = this.$container.find('.fixed-table-footer');
+	      } else {
+	        if (!this.$tableFooter.length) {
+	          this.$el.append('<tfoot><tr></tr></tfoot>');
+	          this.$tableFooter = this.$el.find('tfoot');
+	        }
 	      }
 	    }
 	  }, {
@@ -3878,6 +3996,7 @@
 	        cellStyles: [],
 	        searchables: []
 	      };
+	      Utils.updateFieldGroup(this.options.columns);
 	      this.options.columns.forEach(function (columns, i) {
 	        html.push('<tr>');
 
@@ -3888,11 +4007,15 @@
 	        columns.forEach(function (column, j) {
 	          var class_ = Utils.sprintf(' class="%s"', column['class']);
 	          var unitWidth = column.widthUnit;
-	          var width = Number.parseFloat(column.width);
+	          var width = parseFloat(column.width);
 	          var halign = Utils.sprintf('text-align: %s; ', column.halign ? column.halign : column.align);
 	          var align = Utils.sprintf('text-align: %s; ', column.align);
 	          var style = Utils.sprintf('vertical-align: %s; ', column.valign);
 	          style += Utils.sprintf('width: %s; ', (column.checkbox || column.radio) && !width ? !column.showSelectTitle ? '36px' : undefined : width ? width + unitWidth : undefined);
+
+	          if (typeof column.fieldIndex === 'undefined' && !column.visible) {
+	            return;
+	          }
 
 	          if (typeof column.fieldIndex !== 'undefined') {
 	            _this2.header.fields[column.fieldIndex] = column.field;
@@ -4245,17 +4368,19 @@
 
 	          _this4._toggleAllColumns($(currentTarget).prop('checked'));
 	        });
-	      }
+	      } // Fix #4516: this.showSearchClearButton is for extensions
 
-	      if (o.search) {
+
+	      if (o.search || this.showSearchClearButton) {
 	        html = [];
-	        var showSearchButton = Utils.sprintf(this.constants.html.searchButton, o.formatSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.search) : '', o.showButtonText ? o.formatSearch() : '');
-	        var showSearchClearButton = Utils.sprintf(this.constants.html.searchClearButton, o.formatClearSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.clearSearch) : '', o.showButtonText ? o.formatClearSearch() : '');
+	        var showSearchButton = Utils.sprintf(this.constants.html.searchButton, this.constants.buttonsClass, o.formatSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.search) : '', o.showButtonText ? o.formatSearch() : '');
+	        var showSearchClearButton = Utils.sprintf(this.constants.html.searchClearButton, this.constants.buttonsClass, o.formatClearSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.clearSearch) : '', o.showButtonText ? o.formatClearSearch() : '');
 	        var searchInputHtml = "<input class=\"".concat(this.constants.classes.input).concat(Utils.sprintf(' input-%s', o.iconSize), " search-input\" type=\"text\" placeholder=\"").concat(o.formatSearch(), "\">");
 	        var searchInputFinalHtml = searchInputHtml;
 
 	        if (o.showSearchButton || o.showSearchClearButton) {
-	          searchInputFinalHtml = Utils.sprintf(this.constants.html.inputGroup, searchInputHtml, (o.showSearchButton ? showSearchButton : '') + (o.showSearchClearButton ? showSearchClearButton : ''));
+	          var buttonsHtml = (o.showSearchButton ? showSearchButton : '') + (o.showSearchClearButton ? showSearchClearButton : '');
+	          searchInputFinalHtml = o.search ? Utils.sprintf(this.constants.html.inputGroup, searchInputHtml, buttonsHtml) : buttonsHtml;
 	        }
 
 	        html.push(Utils.sprintf("\n        <div class=\"".concat(this.constants.classes.pull, "-").concat(o.searchAlign, " search ").concat(this.constants.classes.inputGroup, "\">\n          %s\n        </div>\n      "), searchInputFinalHtml));
@@ -4284,10 +4409,6 @@
 	        if (o.showSearchClearButton) {
 	          this.$toolbar.find('.search button[name=clearSearch]').click(function () {
 	            _this4.resetSearch();
-
-	            _this4.onSearch({
-	              currentTarget: _this4.$toolbar.find('.search input')
-	            });
 	          });
 	        }
 	      }
@@ -4301,7 +4422,7 @@
 
 	      var overwriteSearchText = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
-	      if (currentTarget !== undefined && overwriteSearchText) {
+	      if (currentTarget !== undefined && $(currentTarget).length && overwriteSearchText) {
 	        var text = $(currentTarget).val().trim();
 
 	        if (this.options.trimOnSearch && $(currentTarget).val() !== text) {
@@ -4343,7 +4464,7 @@
 
 	      if (this.options.sidePagination !== 'server') {
 	        if (this.options.customSearch) {
-	          this.data = Utils.calculateObjectValue(this.options, this.options.customSearch, [this.options.data, this.searchText]);
+	          this.data = Utils.calculateObjectValue(this.options, this.options.customSearch, [this.options.data, this.searchText, this.filterColumns]);
 	          return;
 	        }
 
@@ -5075,7 +5196,7 @@
 
 	        var fields = _this8.getVisibleFields();
 
-	        var field = fields[_this8.options.detailView && !_this8.options.cardView ? index - 1 : index];
+	        var field = fields[_this8.options.detailView && _this8.detailViewIcon && !_this8.options.cardView ? index - 1 : index];
 	        var column = _this8.columns[_this8.fieldsColumnsIndex[field]];
 	        var value = Utils.getItemField(item, field, _this8.options.escape);
 
@@ -5097,7 +5218,7 @@
 	        }
 
 	        if (e.type === 'click' && _this8.options.detailViewByClick) {
-	          _this8.toggleDetailView(rowIndex, _this8.header.detailFormatters[index]);
+	          _this8.toggleDetailView(rowIndex, _this8.header.detailFormatters[_this8.fieldsColumnsIndex[field]]);
 	        }
 	      }).off('mousedown').on('mousedown', function (e) {
 	        // https://github.com/jquery/jquery/issues/1741
@@ -5151,7 +5272,7 @@
 
 	          _this8.$body.find('>tr:not(.no-records-found)').each(function (i, tr) {
 	            var $tr = $(tr);
-	            var $td = $tr.find(_this8.options.cardView ? '.card-view' : 'td').eq(fieldIndex);
+	            var $td = $tr.find(_this8.options.cardView ? '.card-views>.card-view' : '>td').eq(fieldIndex);
 	            var index = key.indexOf(' ');
 	            var name = key.substring(0, index);
 	            var el = key.substring(index + 1);
@@ -5227,8 +5348,8 @@
 	        params.filter = JSON.stringify(this.filterColumnsPartial, null);
 	      }
 
-	      data = Utils.calculateObjectValue(this.options, this.options.queryParams, [params], data);
-	      $.extend(data, query || {}); // false to stop request
+	      $.extend(params, query || {});
+	      data = Utils.calculateObjectValue(this.options, this.options.queryParams, [params], data); // false to stop request
 
 	      if (data === false) {
 	        return;
@@ -5455,7 +5576,7 @@
 	          if (i === 0) {
 	            var $thDetail = $ths.filter('.detail');
 
-	            var _zoomWidth = $thDetail.width() - $thDetail.find('.fht-cell').width();
+	            var _zoomWidth = $thDetail.innerWidth() - $thDetail.find('.fht-cell').width();
 
 	            $thDetail.find('.fht-cell').width($this.innerWidth() - _zoomWidth);
 	          }
@@ -5473,7 +5594,7 @@
 	          $th = $($ths[$this[0].cellIndex]);
 	        }
 
-	        var zoomWidth = $th.width() - $th.find('.fht-cell').width();
+	        var zoomWidth = $th.innerWidth() - $th.find('.fht-cell').width();
 	        $th.find('.fht-cell').width($this.innerWidth() - zoomWidth);
 	      });
 	      this.horizontalScroll();
@@ -5590,7 +5711,7 @@
 	          if (i === 0) {
 	            var $thDetail = $ths.filter('.detail');
 
-	            var _zoomWidth2 = $thDetail.width() - $thDetail.find('.fht-cell').width();
+	            var _zoomWidth2 = $thDetail.innerWidth() - $thDetail.find('.fht-cell').width();
 
 	            $thDetail.find('.fht-cell').width($this.innerWidth() - _zoomWidth2);
 	          }
@@ -5603,7 +5724,7 @@
 	        }
 
 	        var $th = $ths.eq(i);
-	        var zoomWidth = $th.width() - $th.find('.fht-cell').width();
+	        var zoomWidth = $th.innerWidth() - $th.find('.fht-cell').width();
 	        $th.find('.fht-cell').width($this.innerWidth() - zoomWidth);
 	      });
 	      this.horizontalScroll();
@@ -5641,7 +5762,7 @@
 	          var field = _step4.value;
 	          var column = this.columns[this.fieldsColumnsIndex[field]];
 
-	          if (!column.visible) {
+	          if (!column || !column.visible) {
 	            continue;
 	          }
 
@@ -5675,9 +5796,9 @@
 	    key: "getOptions",
 	    value: function getOptions() {
 	      // deep copy and remove data
-	      var options = JSON.parse(JSON.stringify(this.options));
+	      var options = $.extend({}, this.options);
 	      delete options.data;
-	      return options;
+	      return $.extend(true, {}, options);
 	    }
 	  }, {
 	    key: "refreshOptions",
@@ -6020,7 +6141,7 @@
 	          return;
 	        }
 
-	        _this18.data[rowId][field] = value;
+	        _this18.options.data[rowId][field] = value;
 	      });
 
 	      if (params.reinit === false) {
@@ -6401,8 +6522,15 @@
 	        }
 
 	        if (obj.values.includes(row[obj.field])) {
-	          var $el = _this22.$selectItem.filter(':enabled').filter(Utils.sprintf('[data-index="%s"]', i)).prop('checked', checked);
+	          var $el = _this22.$selectItem.filter(':enabled').filter(Utils.sprintf('[data-index="%s"]', i));
 
+	          $el = checked ? $el.not(':checked') : $el.filter(':checked');
+
+	          if (!$el.length) {
+	            return;
+	          }
+
+	          $el.prop('checked', checked);
 	          row[_this22.header.stateField] = checked;
 	          rows.push(row);
 

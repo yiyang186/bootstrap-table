@@ -217,7 +217,7 @@ const UtilsFilterControl = {
 
     $.each(that.header.fields, (j, field) => {
       const column = that.columns[that.fieldsColumnsIndex[field]]
-      const selectControl = $(`.bootstrap-table-filter-control-${UtilsFilterControl.escapeID(column.field)}`)
+      const selectControl = that.$tableBody.find(`.bootstrap-table-filter-control-${UtilsFilterControl.escapeID(column.field)}`)
 
       if (
         UtilsFilterControl.isColumnSearchableViaSelect(column) &&
@@ -239,7 +239,7 @@ const UtilsFilterControl = {
             formattedValue = Utils.calculateObjectValue(that.header, column.filterDataCollector, [fieldValue, data[i], formattedValue], formattedValue)
           }
 
-          if (typeof formattedValue === 'object') {
+          if (typeof formattedValue === 'object' && formattedValue !== null) {
             formattedValue.forEach((value) => {
               UtilsFilterControl.addOptionToSelectControl(selectControl, value, value, column.filterDefault)
             })
@@ -337,9 +337,7 @@ const UtilsFilterControl = {
             column.filterData.indexOf(':') + 1,
             column.filterData.length
           )
-          selectControl = $(
-            `.bootstrap-table-filter-control-${UtilsFilterControl.escapeID(column.field)}`
-          )
+          selectControl = that.$tableBody.find(`.bootstrap-table-filter-control-${UtilsFilterControl.escapeID(column.field)}`)
 
           UtilsFilterControl.addOptionToSelectControl(selectControl, '', column.filterControlPlaceholder, column.filterDefault)
           filterDataType(filterDataSource, selectControl, column.filterDefault)
@@ -766,6 +764,11 @@ $.BootstrapTable = class extends $.BootstrapTable {
     this.EnableControls(false)
     this.onSearch(event, false)
     this.trigger('column-search', $field, text)
+  }
+
+  initToolbar () {
+    this.showSearchClearButton = this.options.filterControl && this.options.showSearchClearButton
+    super.initToolbar()
   }
 
   resetSearch () {

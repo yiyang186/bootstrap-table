@@ -1,4 +1,4 @@
-const VERSION = '1.15.2'
+const VERSION = '1.15.4'
 
 let bootstrapVersion = 4
 try {
@@ -36,6 +36,7 @@ const CONSTANTS = {
       buttonsDropdown: 'btn-group',
       pull: 'pull',
       inputGroup: 'input-group',
+      inputPrefix: 'input-',
       input: 'form-control',
       paginationDropdown: 'btn-group dropdown',
       dropup: 'dropup',
@@ -55,8 +56,8 @@ const CONSTANTS = {
       icon: '<i class="%s %s"></i>',
       inputGroup: '<div class="input-group">%s<span class="input-group-btn">%s</span></div>',
       searchInput: '<input class="%s%s" type="text" placeholder="%s">',
-      searchButton: '<button class="btn btn-default" type="button" name="search" title="%s">%s %s</button>',
-      searchClearButton: '<button class="btn btn-default" type="button" name="clearSearch" title="%s">%s %s</button>'
+      searchButton: '<button class="%s" type="button" name="search" title="%s">%s %s</button>',
+      searchClearButton: '<button class="%s" type="button" name="clearSearch" title="%s">%s %s</button>'
     }
   },
   4: {
@@ -81,6 +82,7 @@ const CONSTANTS = {
       buttonsDropdown: 'btn-group',
       pull: 'float',
       inputGroup: 'btn-group',
+      inputPrefix: 'form-control-',
       input: 'form-control',
       paginationDropdown: 'btn-group dropdown',
       dropup: 'dropup',
@@ -100,8 +102,8 @@ const CONSTANTS = {
       icon: '<i class="%s %s"></i>',
       inputGroup: '<div class="input-group">%s<div class="input-group-append">%s</div></div>',
       searchInput: '<input class="%s%s" type="text" placeholder="%s">',
-      searchButton: '<button class="btn btn-secondary" type="button" name="search" title="%s">%s %s</button>',
-      searchClearButton: '<button class="btn btn-secondary" type="button" name="clearSearch" title="%s">%s %s</button>'
+      searchButton: '<button class="%s" type="button" name="search" title="%s">%s %s</button>',
+      searchClearButton: '<button class="%s" type="button" name="clearSearch" title="%s">%s %s</button>'
     }
   }
 }[bootstrapVersion]
