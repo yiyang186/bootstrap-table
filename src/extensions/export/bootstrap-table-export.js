@@ -84,7 +84,7 @@ $.BootstrapTable = class extends $.BootstrapTable {
       return
     }
 
-    let $menu = $(this.constants.html.pageDropdown.join(''))
+    let $menu = $(this.constants.html.toolbarDropdown.join(''))
 
     this.$export = $(`
       <div class="export ${this.constants.classes.buttonsDropdown}">
@@ -194,6 +194,10 @@ $.BootstrapTable = class extends $.BootstrapTable {
         }
       })
 
+      if (typeof o.exportOptions.fileName === 'function') {
+        options.fileName = o.exportOptions.fileName()
+      }
+
       this.$el.tableExport($.extend({
         onAfterSaveToFile: () => {
           if (o.exportFooter) {
@@ -221,13 +225,15 @@ $.BootstrapTable = class extends $.BootstrapTable {
     if (o.exportDataType === 'all' && o.pagination) {
       const eventName = o.sidePagination === 'server'
         ? 'post-body.bs.table' : 'page-change.bs.table'
+      const virtualScroll = this.options.virtualScroll
+
       this.$el.one(eventName, () => {
         doExport(() => {
-          this.virtualScrollDisabled = false
+          this.options.virtualScroll = virtualScroll
           this.togglePagination()
         })
       })
-      this.virtualScrollDisabled = true
+      this.options.virtualScroll = false
       this.togglePagination()
       this.trigger('export-saved', this.getData())
     } else if (o.exportDataType === 'selected') {

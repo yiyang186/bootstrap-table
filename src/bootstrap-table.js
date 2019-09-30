@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.14.2
+ * version: 1.15.2
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -127,6 +127,11 @@ class BootstrapTable {
       }
 
       this.$tableFooter = this.$container.find('.fixed-table-footer')
+    } else {
+      if (!this.$tableFooter.length) {
+        this.$el.append('<tfoot><tr></tr></tfoot>')
+        this.$tableFooter = this.$el.find('tfoot')
+      }
     }
   }
 
@@ -219,6 +224,8 @@ class BootstrapTable {
       searchables: []
     }
 
+    Utils.updateFieldGroup(this.options.columns)
+
     this.options.columns.forEach((columns, i) => {
       html.push('<tr>')
 
@@ -230,6 +237,10 @@ class BootstrapTable {
       }
 
       columns.forEach((column, j) => {
+        if (!column.visible) {
+          return
+        }
+
         const class_ = Utils.sprintf(' class="%s"', column['class'])
         const unitWidth = column.widthUnit
         const width = Number.parseFloat(column.width)
@@ -252,10 +263,6 @@ class BootstrapTable {
           this.header.sortNames[column.fieldIndex] = column.sortName
           this.header.cellStyles[column.fieldIndex] = column.cellStyle
           this.header.searchables[column.fieldIndex] = column.searchable
-
-          if (!column.visible) {
-            return
-          }
 
           if (this.options.cardView && (!column.cardVisible)) {
             return
@@ -625,21 +632,28 @@ class BootstrapTable {
       const showSearchButton = Utils.sprintf(this.constants.html.searchButton, o.formatSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.search) : '', o.showButtonText ? o.formatSearch() : '')
       const showSearchClearButton = Utils.sprintf(this.constants.html.searchClearButton, o.formatClearSearch(), o.showButtonIcons ? Utils.sprintf(this.constants.html.icon, o.iconsPrefix, o.icons.clearSearch) : '', o.showButtonText ? o.formatClearSearch() : '')
 
+      const searchInputHtml = `<input class="${this.constants.classes.input}${Utils.sprintf(' input-%s', o.iconSize)} search-input" type="text" placeholder="${o.formatSearch()}">`
+      let searchInputFinalHtml = searchInputHtml
+      if (o.showSearchButton || o.showSearchClearButton) {
+        searchInputFinalHtml = Utils.sprintf(this.constants.html.inputGroup,
+          searchInputHtml,
+          (o.showSearchButton ? showSearchButton : '') +
+            (o.showSearchClearButton ? showSearchClearButton : ''))
+      }
+
       html.push(Utils.sprintf(`
         <div class="${this.constants.classes.pull}-${o.searchAlign} search ${this.constants.classes.inputGroup}">
-            %s
+          %s
         </div>
-      `,
-      Utils.sprintf(this.constants.html.inputGroup,
-        `<input class="${this.constants.classes.input}${Utils.sprintf(' input-%s', o.iconSize)}" type="text" placeholder="${o.formatSearch()}">`,
-        (o.showSearchButton ? showSearchButton : '') +
-        (o.showSearchClearButton ? showSearchClearButton : ''))
-      ))
+      `, searchInputFinalHtml))
 
       this.$toolbar.append(html.join(''))
       const $searchInput = this.$toolbar.find('.search input')
       $search = o.showSearchButton ? this.$toolbar.find('.search button[name=search]') : $searchInput
-      const eventTriggers = o.showSearchButton ? 'click' : 'keyup drop blur'
+
+      const eventTriggers = o.showSearchButton ? 'click' :
+        (Utils.isIEBrowser() ? 'mouseup' : 'keyup drop blur')
+
       $search.off(eventTriggers).on(eventTriggers, event => {
         if (o.searchOnEnterKey && event.keyCode !== 13) {
           return
@@ -661,15 +675,6 @@ class BootstrapTable {
           this.onSearch({currentTarget: this.$toolbar.find('.search input')})
         })
       }
-
-      if (Utils.isIEBrowser()) {
-        $search.off('mouseup').on('mouseup', event => {
-          clearTimeout(timeoutId) // doesn't matter if it's 0
-          timeoutId = setTimeout(() => {
-            this.onSearch(event)
-          }, o.searchTimeOut)
-        })
-      }
     }
   }
 
@@ -685,8 +690,10 @@ class BootstrapTable {
         return
       }
 
-      this.searchText = text
-      this.options.searchText = text
+      if ($(currentTarget).hasClass('search-input')) {
+        this.searchText = text
+        this.options.searchText = text
+      }
     }
 
     if (!firedByInitSearchText) {
@@ -1025,7 +1032,7 @@ class BootstrapTable {
               html.push(pageItem(i, ' page-intermediate'))
             } else {
               html.push(Utils.sprintf(this.constants.html.paginationItem,
-                ' page-last-separator disabled', '...'))
+                ' page-last-separator disabled', '', '...'))
             }
           }
         }
@@ -1376,7 +1383,7 @@ class BootstrapTable {
       const tr = this.initRow(item, i, data, trFragments)
       hasTr = hasTr || !!tr
       if (tr && typeof tr === 'string') {
-        if (this.virtualScrollDisabled) {
+        if (!this.options.virtualScroll) {
           trFragments.append(tr)
         } else {
           rows.push(tr)
@@ -1390,7 +1397,7 @@ class BootstrapTable {
         this.$header.find('th').length,
         this.options.formatNoMatches())}</tr>`)
     } else {
-      if (this.virtualScrollDisabled) {
+      if (!this.options.virtualScroll) {
         this.$body.html(trFragments)
       } else {
         if (this.virtualScroll) {
@@ -1400,6 +1407,7 @@ class BootstrapTable {
           rows,
           scrollEl: this.$tableBody[0],
           contentEl: this.$body[0],
+          itemHeight: this.options.virtualScrollItemHeight,
           callback: () => {
             this.fitHeader()
           }
@@ -1489,7 +1497,11 @@ class BootstrapTable {
         fieldIndex += 1
       }
 
-      for (const [key, event] of Object.entries(events)) {
+      for (const key in events) {
+        if (!events.hasOwnProperty(key)) {
+          continue
+        }
+        const event = events[key]
         this.$body.find('>tr:not(.no-records-found)').each((i, tr) => {
           const $tr = $(tr)
           const $td = $tr.find(this.options.cardView ? '.card-view' : 'td').eq(fieldIndex)
@@ -1901,7 +1913,7 @@ class BootstrapTable {
     for (const field of this.header.fields) {
       const column = this.columns[this.fieldsColumnsIndex[field]]
 
-      if (!column.visible) {
+      if (!column || !column.visible) {
         continue
       }
       visibleFields.push(field)
@@ -2061,7 +2073,13 @@ class BootstrapTable {
       if (!params.hasOwnProperty('index') || !params.hasOwnProperty('row')) {
         continue
       }
+
       $.extend(this.options.data[params.index], params.row)
+      if (params.hasOwnProperty('replace') && params.replace) {
+        this.options.data[params.index] = params.row
+      } else {
+        $.extend(this.options.data[params.index], params.row)
+      }
     }
 
     this.initSearch()
@@ -2118,11 +2136,15 @@ class BootstrapTable {
       }
 
       const rowId = this.options.data.indexOf(this.getRowByUniqueId(params.id))
-
       if (rowId === -1) {
         continue
       }
-      $.extend(this.options.data[rowId], params.row)
+
+      if (params.hasOwnProperty('replace') && params.replace) {
+        this.options.data[rowId] = params.row
+      } else {
+        $.extend(this.options.data[rowId], params.row)
+      }
     }
 
     this.initSearch()
@@ -2177,7 +2199,7 @@ class BootstrapTable {
       if (rowId === -1) {
         return
       }
-      this.data[rowId][field] = value
+      this.options.data[rowId][field] = value
     })
 
     if (params.reinit === false) {

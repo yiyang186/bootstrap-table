@@ -114,6 +114,7 @@ BootstrapTable.prototype.makeRowsReorderable = function () {
     maxMovingRows: that.options.maxMovingRows,
     dragaccept: that.options.dragaccept,
     clickDelay: 200,
+    dragHandle: '.th-inner',
     beforeStop () {
       const ths = []
       const formatters = []
@@ -135,16 +136,16 @@ BootstrapTable.prototype.makeRowsReorderable = function () {
         }
       }
 
-      for (let i = 0; i < this.length; i++ ) {
+      for (let i = 0; i < ths.length; i++ ) {
         columnIndex = that.fieldsColumnsIndex[ths[i]]
         if (columnIndex !== -1) {
+          that.fieldsColumnsIndex[ths[i]] = i
           that.columns[columnIndex].fieldIndex = i
           columns.push(that.columns[columnIndex])
-          that.columns.splice(columnIndex, 1)
         }
       }
 
-      that.columns = that.columns.concat(columns)
+      that.columns = columns
 
       filterFn() // Support <IE9
       $.each(that.columns, (i, column) => {
@@ -155,7 +156,8 @@ BootstrapTable.prototype.makeRowsReorderable = function () {
             optionsColumns.push(item)
             found = true
             return false
-          } return true
+          }
+          return true
         })
       })
 
@@ -165,6 +167,7 @@ BootstrapTable.prototype.makeRowsReorderable = function () {
       that.header.formatters = formatters
       that.initHeader()
       that.initToolbar()
+      that.initSearchText()
       that.initBody()
       that.resetView()
       that.trigger('reorder-column', ths)

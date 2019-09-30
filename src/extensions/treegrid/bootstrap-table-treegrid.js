@@ -32,7 +32,7 @@ $.BootstrapTable = class extends $.BootstrapTable {
   }
 
   initBody (...args) {
-    this.virtualScrollDisabled = this.treeEnable
+    this.options.virtualScroll = !this.treeEnable
     super.initBody(...args)
   }
 
@@ -69,7 +69,10 @@ $.BootstrapTable = class extends $.BootstrapTable {
 
   initRow (item, idx, data, parentDom) {
     if (this.treeEnable) {
-      if (this.options.rootParentId === item[this.parentIdField] || !item[this.parentIdField]) {
+      if (
+        this.options.rootParentId === item[this.options.parentIdField] ||
+        !item[this.options.parentIdField]
+      ) {
         if (item._level === undefined) {
           item._level = 0
         }
