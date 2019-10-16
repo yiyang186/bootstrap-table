@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.15.4
+ * version: 1.15.5
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -552,7 +552,7 @@ class BootstrapTable {
           )
         )
 
-        html.push(this.constants.html.toolbarDropdownSeperator)
+        html.push(this.constants.html.toolbarDropdownSeparator)
       }
 
       this.columns.forEach((column, i) => {
@@ -680,7 +680,7 @@ class BootstrapTable {
 
           clearTimeout(timeoutId) // doesn't matter if it's 0
           timeoutId = setTimeout(() => {
-            this.onSearch(event)
+            this.onSearch({currentTarget: event.currentTarget})
           }, o.searchTimeOut)
         })
       }
@@ -2572,7 +2572,7 @@ class BootstrapTable {
     if (!this.options.cardView && this.options.showHeader && this.options.height) {
       this.$tableHeader.show()
       this.resetHeader()
-      padding += this.$header.outerHeight(true)
+      padding += this.$header.outerHeight(true) + 1
     } else {
       this.$tableHeader.hide()
       this.trigger('post-header')
